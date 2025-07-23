@@ -126,7 +126,7 @@ grep "error" /var/log/app.log | clip_copy
 docker logs container-name | clip_copy
 ```
 
-#### Vim Integration (on remote server)
+#### Vim Integration
 Add to your `~/.vimrc` on the remote server:
 ```vim
 " Send current line to local clipboard
@@ -139,7 +139,13 @@ vnoremap <leader>cl :w !python3 ~/.local/bin/clip_copy.py<CR>
 nnoremap <leader>ca :%w !python3 ~/.local/bin/clip_copy.py<CR>
 ```
 
-#### Tmux Integration (on remote server)
+#### Helix Intergration
+```
+[keys.normal.space]
+y = ":pipe-to clip_copy"
+```
+
+#### Tmux Integration
 ```bash
 # Send tmux buffer to local clipboard
 tmux show-buffer | clip_copy
