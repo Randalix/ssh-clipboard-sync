@@ -7,6 +7,7 @@ A simple tool to copy data from a remote server back to your local machine's cli
 - 📋 Copy data from remote server to local clipboard over SSH
 - 📦 Handles large outputs with chunked data transmission
 - 🖥️ Cross-platform support (Linux, macOS, Android/Termux)
+- 🔄 Can replace platform-specific clipboard tools (xclip, pbcopy) for cross-platform scripts
 - 🔒 Secure transmission over existing SSH connection
 - ⚡ Fast and lightweight with minimal dependencies
 
@@ -141,11 +142,32 @@ nnoremap <leader>ca :%w !python3 ~/.local/bin/clip_copy.py<CR>
 #### Tmux Integration (on remote server)
 ```bash
 # Send tmux buffer to local clipboard
-tmux show-buffer | python3 ~/.local/bin/clip_copy.py
+tmux show-buffer | clip_copy
 
 # Or bind to a key in ~/.tmux.conf
-bind-key C-c run "tmux show-buffer | python3 ~/.local/bin/clip_copy.py"
+bind-key C-c run "tmux show-buffer | clip_copy"
 ```
+
+#### Cross-Platform Scripts
+One of the key benefits is using `clip_copy.py` as a universal clipboard tool in your scripts, replacing platform-specific commands:
+
+**Instead of:**
+```bash
+# Platform-specific approach
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "data" | pbcopy
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    echo "data" | xclip -selection clipboard
+fi
+```
+
+**Use:**
+```bash
+# Works on any remote server, sends to your local clipboard
+echo "data" | clip_copy
+```
+
+This makes your scripts portable across different server environments while always sending output to your local machine where you can easily access it.
 
 ## Troubleshooting
 
