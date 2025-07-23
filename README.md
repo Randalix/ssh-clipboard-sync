@@ -1,11 +1,11 @@
 # SSH Clipboard Sync
 
-A simple tool to synchronize clipboard contents between local and remote machines over SSH. This allows you to copy text on your local machine and have it automatically available on the remote machine's clipboard, and vice versa.
+A simple tool to copy data from a remote server back to your local machine's clipboard over SSH. Perfect for when you're working on a remote server and need to copy command output, file contents, or any text back to your local clipboard.
 
 ## Features
 
-- 🔄 Bidirectional clipboard synchronization over SSH
-- 📦 Handles large clipboard contents with chunked data transmission
+- 📋 Copy data from remote server to local clipboard over SSH
+- 📦 Handles large outputs with chunked data transmission
 - 🖥️ Cross-platform support (Linux, macOS, Android/Termux)
 - 🔒 Secure transmission over existing SSH connection
 - ⚡ Fast and lightweight with minimal dependencies
@@ -13,14 +13,22 @@ A simple tool to synchronize clipboard contents between local and remote machine
 ## How It Works
 
 The system consists of two Python scripts:
-- **Client** (`clip_copy.py`): Copies data to local clipboard and sends it to the remote machine
-- **Server** (`clip_server.py`): Receives data and sets it on the remote machine's clipboard
+- **Server** (`clip_server.py`): Runs on your local machine, receives data and sets your local clipboard
+- **Client** (`clip_copy.py`): Runs on the remote server, sends data back to your local machine
 
 Data is transmitted in chunks to handle large clipboard contents efficiently, using a length-prefixed protocol over TCP sockets tunneled through SSH.
 
+**Example workflow:**
+1. Start `clip_server.py` on your local machine
+2. SSH to remote server (with RemoteForward configured)
+3. On remote server: `echo "hello" | clip_copy.py`
+4. "hello" appears in your local clipboard!
+
 ## Prerequisites
 
-### Local Machine (Client)
+### Prerequisites
+
+### Local Machine (where clip_server.py runs)
 - Python 3.6+
 - Clipboard utilities:
   - **Linux (X11)**: `xclip`
@@ -28,27 +36,28 @@ Data is transmitted in chunks to handle large clipboard contents efficiently, us
   - **macOS**: `pbcopy` (built-in)
   - **Android/Termux**: `termux-api`
 
-### Remote Machine (Server)
+### Remote Server (where clip_copy.py runs)
 - Python 3.6+
-- Clipboard utilities (same as above based on the remote OS)
+- SSH access from your local machine
 
 ## Installation
 
-1. Clone this repository:
+1. Clone this repository on both your local machine and remote server:
 ```bash
 git clone https://github.com/yourusername/ssh-clipboard-sync.git
 cd ssh-clipboard-sync
 ```
 
-2. Copy the scripts to your preferred location:
+2. **On your local machine**, copy the server script:
 ```bash
-# Copy to local bin directory
-cp clip_copy.py ~/.local/bin/
 cp clip_server.py ~/.local/bin/
-
-# Make executable
-chmod +x ~/.local/bin/clip_copy.py
 chmod +x ~/.local/bin/clip_server.py
+```
+
+3. **On the remote server**, copy the client script:
+```bash
+cp clip_copy.py ~/.local/bin/
+chmod +x ~/.local/bin/clip_copy.py
 ```
 
 ## Configuration
@@ -76,53 +85,66 @@ Host myserver
 
 ### Port Configuration
 
-- **Port 9999**: Server listens on this port (remote machine)
-- **Port 9997**: Client connects to this port (tunneled back to local port 9999)
+- **Port 9999**: Server listens on this port (local machine)
+- **Port 9997**: Client connects to this port on remote server (tunneled back to local port 9999)
 
-You can change these ports by modifying the `PORT` variable in both scripts.
+The SSH RemoteForward creates a tunnel so that when the remote server connects to its localhost:9997, it actually connects back to your local machine's port 9999.
 
 ## Usage
 
 ### Basic Setup
 
-1. **On the remote machine**, start the clipboard receiver:
+1. **On your local machine**, start the clipboard server:
 ```bash
 python3 clip_server.py
 ```
 
-2. **On your local machine**, send clipboard data:
+2. **SSH to your remote server** (the RemoteForward will be established automatically)
+
+3. **On the remote server**, copy data to your local clipboard:
 ```bash
-echo "Hello, remote clipboard!" | python3 clip_copy.py
+echo "Hello from the server!" | clip_copy.py
+cat /var/log/syslog | clip_copy.py
+ls -la | clip_copy.py
 ```
+
+The data will appear in your local machine's clipboard!
 
 ### Integration Examples
 
-#### Shell Alias
-Add to your `~/.bashrc` or `~/.zshrc`:
+#### Shell Alias (on remote server)
+Add to your `~/.bashrc` or `~/.zshrc` on the remote server:
 ```bash
-alias rclip='python3 ~/.local/bin/clip_copy.py'
+alias clip_copy='python3 ~/.local/bin/clip_copy.py'
 ```
 
 Usage:
 ```bash
-echo "Some text" | rclip
-cat file.txt | rclip
+cat important-file.txt | clip_copy
+grep "error" /var/log/app.log | clip_copy
+docker logs container-name | clip_copy
 ```
 
-#### Vim Integration
-Add to your `~/.vimrc`:
+#### Vim Integration (on remote server)
+Add to your `~/.vimrc` on the remote server:
 ```vim
-" Send current line to remote clipboard
-nnoremap <leader>rl :.w !python3 ~/.local/bin/clip_copy.py<CR>
+" Send current line to local clipboard
+nnoremap <leader>cl :.w !python3 ~/.local/bin/clip_copy.py<CR>
 
-" Send visual selection to remote clipboard  
-vnoremap <leader>rl :w !python3 ~/.local/bin/clip_copy.py<CR>
+" Send visual selection to local clipboard  
+vnoremap <leader>cl :w !python3 ~/.local/bin/clip_copy.py<CR>
+
+" Send entire file to local clipboard
+nnoremap <leader>ca :%w !python3 ~/.local/bin/clip_copy.py<CR>
 ```
 
-#### Tmux Integration
+#### Tmux Integration (on remote server)
 ```bash
-# Send tmux buffer to remote clipboard
+# Send tmux buffer to local clipboard
 tmux show-buffer | python3 ~/.local/bin/clip_copy.py
+
+# Or bind to a key in ~/.tmux.conf
+bind-key C-c run "tmux show-buffer | python3 ~/.local/bin/clip_copy.py"
 ```
 
 ## Troubleshooting
