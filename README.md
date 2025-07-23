@@ -145,15 +145,6 @@ nnoremap <leader>ca :%w !python3 ~/.local/bin/clip_copy.py<CR>
 y = ":pipe-to clip_copy"
 ```
 
-#### Tmux Integration
-```bash
-# Send tmux buffer to local clipboard
-tmux show-buffer | clip_copy
-
-# Or bind to a key in ~/.tmux.conf
-bind-key C-c run "tmux show-buffer | clip_copy"
-```
-
 #### Cross-Platform Scripts
 One of the key benefits is using `clip_copy.py` as a universal clipboard tool in your scripts, replacing platform-specific commands:
 
