@@ -1,0 +1,13 @@
+[Unit]
+Description=SSH Clipboard Server
+After=network.target
+
+[Service]
+Type=simple
+User=%i
+ExecStart=/usr/bin/python3 /home/%i/.local/bin/clip_server.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
