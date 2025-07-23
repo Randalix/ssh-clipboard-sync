@@ -3,6 +3,8 @@ import socket
 import subprocess
 import sys
 import struct
+import platform
+import os
 
 HOST = '0.0.0.0'  # Listen on all network interfaces
 PORT = 9999       # Port to listen on
@@ -12,10 +14,25 @@ def is_port_in_use(host, port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex((host, port)) == 0
 
+
 def set_clipboard(data):
-    """Set the macOS clipboard content."""
-    process = subprocess.Popen(['pbcopy'], stdin=subprocess.PIPE)
-    process.communicate(input=data.encode('utf-8'))
+    system = platform.system()
+    if system == "Linux":
+        session_type = os.getenv("XDG_SESSION_TYPE", "")
+        if session_type.lower() == "wayland":
+            cmd = ["wl-copy"]
+        else:
+            cmd = ["xclip", "-r", "-selection", "clipboard"]
+    elif system == "Darwin":
+        cmd = ["pbcopy"]
+    elif system == "Linux" and "ANDROID_ROOT" in os.environ:
+        cmd = ["termux-clipboard-set"]
+    else:
+        print("Unsupported OS")
+        sys.exit(1)
+    
+    process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+    process.communicate(input=data.encode("utf-8"))
 
 def recv_exact(sock, num_bytes):
     """Receive exactly num_bytes from socket"""
